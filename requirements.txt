@@ -1,0 +1,17 @@
+# Django
+Django>=5.0,<6.0
+
+# Environment variables
+python-decouple>=3.8
+
+# Database
+psycopg2-binary>=2.9.0
+
+# PDF processing
+PyMuPDF>=1.23.0
+
+# Image processing (for signature rendering)
+Pillow>=10.0.0
+
+# ID obfuscation
+hashids>=1.3.0
