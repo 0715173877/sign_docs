@@ -1,0 +1,18 @@
+Hello,
+
+{{ sender_name }} has sent you a signed document.
+
+Document: {{ document.title|default:"Untitled" }}
+Signed on: {{ document.updated_at|date:"F d, Y H:i" }}
+
+{% if message %}Message from {{ sender_name }}:
+{{ message }}
+
+{% endif %}The signed PDF is attached to this email.
+
+If you have trouble viewing the attachment, you can also download it directly from this link (no login required):
+{{ download_url }}
+
+Best regards,
+{{ sender_name }}
+via SignDocs

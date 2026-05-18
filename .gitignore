@@ -1,0 +1,37 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Django
+staticfiles/
+*.sqlite3
+
+# Media files
+media/documents/
+media/previews/
+media/signed/
+media/signed_previews/
+media/signatures/
+media/stamps/
+media/samples/
+media/.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual environment
+venv/
+.venv/

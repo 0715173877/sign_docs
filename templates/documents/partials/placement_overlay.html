@@ -1,0 +1,16 @@
+<div class="placement-overlay position-absolute" 
+     data-type="{{ placement.placement_type }}" 
+     data-x="{{ placement.x }}" 
+     data-y="{{ placement.y }}"
+     style="left: {{ placement.x }}px; top: {{ placement.y }}px; pointer-events: auto; z-index: 10;">
+    <div class="position-relative">
+        <img src="{{ img_url }}" alt="{{ placement.placement_type|title }}" class="overlay-img rounded shadow-sm border" 
+             style="max-width: {% if placement.placement_type == 'signature' %}150{% else %}120{% endif %}px; max-height: {% if placement.placement_type == 'signature' %}60{% else %}120{% endif %}px; opacity: 0.85;">
+        <button class="remove-placement position-absolute btn btn-danger btn-sm p-0 d-flex align-items-center justify-content-center" 
+                style="width: 20px; height: 20px; top: -8px; right: -8px; border-radius: 50%; font-size: 0.6rem;"
+                onclick="this.closest('.placement-overlay').remove(); updatePlacementStatus();"
+                title="Remove">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+</div>

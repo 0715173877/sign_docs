@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Preview Signed Document - SignDocs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="page-header d-flex align-items-center gap-3">
+            <div class="page-header-icon bg-gradient-success text-white shadow-sm">
+                <i class="bi bi-eye"></i>
+            </div>
+            <div>
+                <h1 class="h4 fw-bold mb-1">Signed Document Preview</h1>
+                <p class="text-muted small mb-0">
+                    &ldquo;<strong>{{ document.title|default:"Untitled" }}</strong>&rdquo; &mdash; Signed on {{ document.signed_at|date:"F d, Y H:i" }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-wrap gap-2 mb-4 animate-fade-in">
+            <a href="{% url 'download_signed' document.id %}" class="btn btn-primary shadow-sm px-4">
+                <i class="bi bi-download me-1"></i>Download Signed PDF
+            </a>
+            <a href="{% url 'send_signed' document.id %}" class="btn btn-success shadow-sm px-4">
+                <i class="bi bi-send me-1"></i>Send to Client
+            </a>
+            <button type="button" class="btn btn-outline-info shadow-sm px-4" onclick="copyPublicLink()">
+                <i class="bi bi-link-45deg me-1"></i>Copy Public Download Link
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Public Link Info -->
+        <div class="alert alert-info d-flex align-items-center gap-2 mb-4 animate-fade-in" role="alert">
+            <i class="bi bi-info-circle flex-shrink-0"></i>
+            <div>
+                <strong>Share with clients:</strong> Use the "Copy Public Download Link" button above to get a link that anyone can use to download the signed PDF — <strong>no login required</strong>.
+            </div>
+        </div>
+
+        <!-- Signed Preview Images -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for preview in preview_urls %}
+                        <div class="col-12">
+                            <div class="text-center">
+                                <img src="{{ preview }}" alt="Signed Document Page {{ forloop.counter }}" 
+                                     class="img-fluid rounded border shadow-sm">
+                                <p class="text-muted small mt-2 mb-0">Page {{ forloop.counter }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <div class="empty-state-icon mx-auto">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </div>
+                            <p class="text-muted mt-2">No preview available.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyPublicLink() {
+    // Build the public download URL using the document's access token
+    const publicUrl = window.location.origin + '/public/download/{{ document.public_access_token }}/';
+    navigator.clipboard.writeText(publicUrl).then(() => {
+        // Show a brief success toast
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-50 start-50 translate-middle bg-dark text-white px-4 py-3 rounded-3 shadow-lg';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = '<i class="bi bi-check-circle me-2"></i> Public download link copied!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }).catch(() => {
+        alert('Public download link: ' + publicUrl);
+    });
+}
+</script>
+{% endblock %}

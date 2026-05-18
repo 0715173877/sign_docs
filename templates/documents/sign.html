@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Sign Document - SignDocs{% endblock %}
+
+{% block content %}
+{% load hashid_filters %}
+<div class="sign-container" data-document-id="{{ document.id }}" data-document-hashid="{{ document.id|encode_id_filter }}">
+    <!-- Page Header -->
+    <div class="page-header d-flex align-items-center gap-3">
+        <div class="page-header-icon bg-gradient-primary text-white shadow-sm">
+            <i class="bi bi-pen"></i>
+        </div>
+        <div>
+            <h1 class="h4 fw-bold mb-1">Place Your Signature & Stamp</h1>
+            <p class="text-muted small mb-0">
+                Click on the preview to place your <strong>signature</strong> and <strong>stamp</strong>.
+                Use the mode buttons below to switch between them.
+            </p>
+        </div>
+    </div>
+
+    {% include 'documents/partials/sign_page_content.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // HTMX-based coordinate placement
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        attachPreviewClickHandler();
+        positionExistingPlacements();
+    });
+
+    function getPlaceItemUrl() {
+        const container = document.querySelector('.sign-container');
+        const docHashId = container ? container.dataset.documentHashid : null;
+        if (!docHashId) return null;
+        return `/sign/${docHashId}/place/`;
+    }
+
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return '';
+    }
+
+    function attachPreviewClickHandler() {
+        const container = document.getElementById('previewContainer');
+        if (!container) return;
+
+        const newContainer = container.cloneNode(true);
+        container.parentNode.replaceChild(newContainer, container);
+        
+        newContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.placement-overlay') || e.target.closest('.remove-placement')) {
+                return;
+            }
+            
+            const preview = document.getElementById('pdfPreview');
+            if (!preview) return;
+            
+            const previewRect = preview.getBoundingClientRect();
+            const scaleX = preview.naturalWidth / previewRect.width;
+            const scaleY = preview.naturalHeight / previewRect.height;
+            
+            const x = (e.clientX - previewRect.left) * scaleX;
+            const y = (e.clientY - previewRect.top) * scaleY;
+            
+            const activeMode = document.querySelector('.btn-mode.active');
+            const mode = activeMode ? activeMode.dataset.mode : 'signature';
+            
+            const pageNum = window.location.pathname.match(/\/page\/(\d+)\//);
+            const page = pageNum ? pageNum[1] : '1';
+            
+            const placeUrl = getPlaceItemUrl();
+            if (!placeUrl) {
+                console.error('Could not determine place item URL');
+                return;
+            }
+            
+            fetch(placeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify({
+                    type: mode,
+                    page: parseInt(page),
+                    x: x,
+                    y: y,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelectorAll(`.placement-overlay[data-type="${mode}"]`).forEach(el => el.remove());
+                    
+                    const container = document.getElementById('placementsContainer');
+                    const temp = document.createElement('div');
+                    temp.innerHTML = data.overlay_html;
+                    const overlay = temp.firstElementChild;
+                    
+                    const preview = document.getElementById('pdfPreview');
+                    const previewRect = preview.getBoundingClientRect();
+                    const scaleX = previewRect.width / preview.naturalWidth;
+                    const scaleY = previewRect.height / preview.naturalHeight;
+                    
+                    overlay.style.left = (x * scaleX) + 'px';
+                    overlay.style.top = (y * scaleY) + 'px';
+                    
+                    container.appendChild(overlay);
+                    
+                    updatePlacementStatus();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+
+    function updatePlacementStatus() {
+        const hasSig = document.querySelector('.placement-overlay[data-type="signature"]');
+        const hasStamp = document.querySelector('.placement-overlay[data-type="stamp"]');
+        const status = document.getElementById('placementStatus');
+        const proceedBtn = document.getElementById('proceedBtn');
+        
+        if (hasSig && hasStamp) {
+            if (status) status.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Both placed! Proceed to OTP.</span>';
+            if (proceedBtn) {
+                proceedBtn.classList.remove('disabled');
+                proceedBtn.style.opacity = '1';
+                proceedBtn.style.cursor = 'pointer';
+                proceedBtn.onclick = null;
+            }
+        } else if (hasSig) {
+            if (status) status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Signature placed! Switch to Stamp mode.</span>';
+        } else {
+            if (status) status.innerHTML = '<i class="bi bi-hand-index-thumb me-1"></i>Click on the preview to place your signature';
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const modeBtn = e.target.closest('.btn-mode');
+        if (modeBtn) {
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            modeBtn.classList.add('active');
+            
+            const status = document.getElementById('placementStatus');
+            const hasSig = document.querySelector('.placement-overlay[data-type="signature"]');
+            const hasStamp = document.querySelector('.placement-overlay[data-type="stamp"]');
+            
+            if (modeBtn.dataset.mode === 'signature') {
+                if (status && hasSig) status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Signature placed! Click to reposition.</span>';
+                else if (status) status.innerHTML = '<i class="bi bi-hand-index-thumb me-1"></i>Click on the preview to place your signature';
+            } else {
+                if (status && hasStamp) status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Stamp placed! Click to reposition.</span>';
+                else if (status) status.innerHTML = '<i class="bi bi-hand-index-thumb me-1"></i>Click on the preview to place your stamp';
+            }
+        }
+    });
+
+    function positionExistingPlacements() {
+        const preview = document.getElementById('pdfPreview');
+        if (!preview) return;
+        
+        if (!preview.complete || preview.naturalWidth === 0) {
+            preview.addEventListener('load', positionExistingPlacements);
+            return;
+        }
+        
+        const previewRect = preview.getBoundingClientRect();
+        const scaleX = previewRect.width / preview.naturalWidth;
+        const scaleY = previewRect.height / preview.naturalHeight;
+        
+        document.querySelectorAll('.placement-overlay').forEach(el => {
+            const x = parseFloat(el.dataset.x);
+            const y = parseFloat(el.dataset.y);
+            if (!isNaN(x) && !isNaN(y)) {
+                el.style.left = (x * scaleX) + 'px';
+                el.style.top = (y * scaleY) + 'px';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        attachPreviewClickHandler();
+        positionExistingPlacements();
+        updatePlacementStatus();
+    });
+
+    window.addEventListener('resize', function() {
+        positionExistingPlacements();
+    });
+</script>
+{% endblock %}

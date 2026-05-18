@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Verify Login - SignDocs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="text-center mb-4 animate-fade-in">
+            <div class="d-inline-flex align-items-center justify-content-center mb-3">
+                <div class="bg-gradient-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 72px; height: 72px;">
+                    <i class="bi bi-shield-check fs-1"></i>
+                </div>
+            </div>
+            <h2 class="h4 fw-bold mb-1">Verify Your Login</h2>
+            <p class="text-muted small mb-0">
+                Enter the verification code sent to your registered contact
+            </p>
+        </div>
+
+        <div class="card border-0 shadow-lg animate-fade-in-up">
+            <div class="card-body p-4">
+                <!-- OTP Delivery Method Info -->
+                <div class="alert alert-info d-flex align-items-center gap-2 mb-4" role="alert">
+                    <i class="bi bi-info-circle fs-5"></i>
+                    <div>
+                        {% if otp_method == 'sms' %}
+                            <strong>SMS sent!</strong> Verification code sent to <strong>{{ otp_destination }}</strong>
+                        {% else %}
+                            <strong>Email sent!</strong> Verification code sent to <strong>{{ otp_destination }}</strong>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="otp_code" class="form-label fw-semibold small">Verification Code</label>
+                        <input type="text" name="otp_code" id="otp_code" 
+                               class="form-control form-control-lg otp-input"
+                               maxlength="6" placeholder="000000"
+                               autocomplete="off" inputmode="numeric" pattern="[0-9]*" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 shadow-sm py-2">
+                        <i class="bi bi-check-lg me-1"></i>Verify & Sign In
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <!-- Resend OTP with method choice -->
+                <div class="text-center">
+                    <p class="text-muted small mb-2">Didn't receive the code?</p>
+                    <div class="d-flex gap-2 justify-content-center flex-wrap">
+                        <a href="?resend=email" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-envelope me-1"></i>Resend via Email
+                        </a>
+                        {% if has_phone %}
+                            <a href="?resend=sms" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-phone me-1"></i>Resend via SMS
+                            </a>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mt-3">
+                        <a href="{% url 'login' %}" class="text-decoration-none">
+                            <i class="bi bi-arrow-left me-1"></i>Back to login
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Send Signed Document - SignDocs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Page Header -->
+        <div class="page-header d-flex align-items-center gap-3">
+            <div class="page-header-icon bg-gradient-primary text-white shadow-sm">
+                <i class="bi bi-send"></i>
+            </div>
+            <div>
+                <h1 class="h4 fw-bold mb-1">Send Signed Document</h1>
+                <p class="text-muted small mb-0">
+                    Send &ldquo;<strong>{{ document.title|default:"Untitled" }}</strong>&rdquo; to your client via email, WhatsApp, or both.
+                </p>
+            </div>
+        </div>
+
+        {% if wa_url %}
+        <!-- WhatsApp Link Result -->
+        <div class="card card-accent-success mb-4 text-center border-0 shadow-sm animate-fade-in">
+            <div class="card-body py-4">
+                <div class="bg-gradient-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                    <i class="bi bi-whatsapp fs-1"></i>
+                </div>
+                <h3 class="h5 fw-bold">WhatsApp Link Generated!</h3>
+                <p class="text-muted">Click the button below to open WhatsApp with a pre-filled message for <strong>{{ wa_phone }}</strong>:</p>
+                <a href="{{ wa_url }}" target="_blank" class="btn btn-success btn-lg px-4 mb-2 shadow-sm">
+                    <i class="bi bi-whatsapp me-2"></i>Open WhatsApp
+                </a>
+                <p class="text-muted small">The recipient will receive a link to download the signed PDF.</p>
+            </div>
+            <div class="card-footer bg-transparent d-flex justify-content-center gap-3 border-0 pt-0">
+                <a href="{% url 'preview_signed' document.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Preview
+                </a>
+                <a href="{% url 'send_signed' document.id %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-repeat me-1"></i>Send Again
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not wa_url or sent %}
+        <div class="card border-0 shadow-sm" {% if sent %}style="display:none;"{% endif %}>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- Method Selection -->
+                    <div class="mb-4 pb-3 border-bottom">
+                        <h5 class="mb-3 fw-semibold">Select Delivery Method(s)</h5>
+                        <div class="d-flex gap-3">
+                            <label class="flex-fill">
+                                <input type="checkbox" name="send_email" id="send_email" class="d-none" checked>
+                                <span class="d-block text-center p-3 border rounded-3 user-select-none email-indicator" 
+                                      style="cursor:pointer; transition: all 0.2s;">
+                                    <i class="bi bi-envelope fs-4 d-block mb-1"></i>
+                                    <span class="small fw-semibold">Email</span>
+                                </span>
+                            </label>
+                            <label class="flex-fill">
+                                <input type="checkbox" name="send_whatsapp" id="send_whatsapp" class="d-none">
+                                <span class="d-block text-center p-3 border rounded-3 user-select-none whatsapp-indicator"
+                                      style="cursor:pointer; transition: all 0.2s;">
+                                    <i class="bi bi-whatsapp fs-4 d-block mb-1"></i>
+                                    <span class="small fw-semibold">WhatsApp</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Email Fields -->
+                    <div id="email-fields" class="mb-4 pb-3 border-bottom">
+                        <h5 class="mb-3 fw-semibold">
+                            <i class="bi bi-envelope me-1"></i>Email Details
+                        </h5>
+                        <div class="mb-3">
+                            <label for="recipient_email" class="form-label">Recipient Email Address</label>
+                            <input type="email" name="recipient_email" id="recipient_email"
+                                   placeholder="client@example.com" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email_message" class="form-label">Optional Message</label>
+                            <textarea name="email_message" id="email_message" rows="3"
+                                      placeholder="Add a personal note..." class="form-control"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Fields -->
+                    <div id="whatsapp-fields" class="mb-4 pb-3 border-bottom">
+                        <h5 class="mb-3 fw-semibold">
+                            <i class="bi bi-whatsapp me-1"></i>WhatsApp Details
+                        </h5>
+                        <div class="mb-3">
+                            <label for="recipient_phone" class="form-label">Recipient Phone Number (with country code)</label>
+                            <input type="text" name="recipient_phone" id="recipient_phone"
+                                   placeholder="e.g. 255712345678" class="form-control">
+                            <div class="form-text">Include country code without + sign. Example: 255712345678</div>
+                        </div>
+                        <div class="alert alert-info py-2 mb-0 small d-flex align-items-center gap-2">
+                            <i class="bi bi-info-circle flex-shrink-0"></i>
+                            <span><strong>Note:</strong> WhatsApp will send a link to download the signed PDF directly — no login required.</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary flex-fill shadow-sm">
+                            <i class="bi bi-send me-1"></i>Send Document
+                        </button>
+                        <a href="{% url 'preview_signed' document.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Preview
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.email-indicator:has(~ input:checked) {
+    border-color: #4361ee !important;
+    background: #eef0ff !important;
+    color: #4361ee !important;
+}
+.whatsapp-indicator:has(~ input:checked) {
+    border-color: #25D366 !important;
+    background: #e6f9ef !important;
+    color: #075e54 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const emailCheckbox = document.getElementById('send_email');
+        const whatsappCheckbox = document.getElementById('send_whatsapp');
+        const emailFields = document.getElementById('email-fields');
+        const whatsappFields = document.getElementById('whatsapp-fields');
+
+        function toggleFields() {
+            if (emailFields) emailFields.style.display = emailCheckbox.checked ? 'block' : 'none';
+            if (whatsappFields) whatsappFields.style.display = whatsappCheckbox.checked ? 'block' : 'none';
+        }
+
+        if (emailCheckbox && whatsappCheckbox) {
+            emailCheckbox.addEventListener('change', toggleFields);
+            whatsappCheckbox.addEventListener('change', toggleFields);
+            toggleFields();
+        }
+    });
+</script>
+{% endblock %}

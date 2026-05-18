@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Profile - SignDocs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Profile Header -->
+        <div class="profile-header d-flex align-items-center gap-4 animate-fade-in">
+            <div class="profile-avatar">
+                {{ user.username|first|upper }}
+            </div>
+            <div class="text-white">
+                <h2 class="h4 fw-bold mb-1">{{ user.username }}</h2>
+                <p class="mb-0 opacity-75 small">{{ user.email }}</p>
+                {% if user.profile.phone_number %}
+                    <p class="mb-0 opacity-75 small"><i class="bi bi-phone"></i> +{{ user.profile.phone_number }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 small animate-fade-in">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                <span>{{ form.non_field_errors.0 }}</span>
+            </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <!-- Signature & Stamp Upload -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm animate-fade-in-up">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="bi bi-pencil-square text-primary fs-5"></i>
+                        <h5 class="fw-bold mb-0">Signature</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user.profile.signature %}
+                            <div class="text-center mb-3 p-3 bg-light rounded-3">
+                                <img src="{{ user.profile.signature.url }}" alt="Current Signature" 
+                                     class="img-fluid" style="max-height: 80px;">
+                            </div>
+                        {% else %}
+                            <div class="text-center mb-3 p-3 bg-light rounded-3">
+                                <i class="bi bi-pencil text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted small mb-0 mt-2">No signature uploaded</p>
+                            </div>
+                        {% endif %}
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ form.signature.id_for_label }}" class="form-label">Upload Signature Image</label>
+                                <input type="file" name="{{ form.signature.name }}" id="{{ form.signature.id_for_label }}" 
+                                       class="form-control {% if form.signature.errors %}is-invalid{% endif %}" accept="image/*">
+                                {% if form.signature.errors %}
+                                    <div class="invalid-feedback">{{ form.signature.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">PNG or JPG with transparent background recommended</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="bi bi-upload me-1"></i>Upload Signature
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stamp Upload -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="bi bi-stamp text-danger fs-5"></i>
+                        <h5 class="fw-bold mb-0">Stamp</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user.profile.stamp %}
+                            <div class="text-center mb-3 p-3 bg-light rounded-3">
+                                <img src="{{ user.profile.stamp.url }}" alt="Current Stamp" 
+                                     class="img-fluid" style="max-height: 100px;">
+                            </div>
+                        {% else %}
+                            <div class="text-center mb-3 p-3 bg-light rounded-3">
+                                <i class="bi bi-stamp text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted small mb-0 mt-2">No stamp uploaded</p>
+                            </div>
+                        {% endif %}
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ form.stamp.id_for_label }}" class="form-label">Upload Stamp Image</label>
+                                <input type="file" name="{{ form.stamp.name }}" id="{{ form.stamp.id_for_label }}" 
+                                       class="form-control {% if form.stamp.errors %}is-invalid{% endif %}" accept="image/*">
+                                {% if form.stamp.errors %}
+                                    <div class="invalid-feedback">{{ form.stamp.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">PNG with transparent background recommended</div>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100 shadow-sm">
+                                <i class="bi bi-upload me-1"></i>Upload Stamp
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phone Number Settings -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="bi bi-telephone text-success fs-5"></i>
+                        <h5 class="fw-bold mb-0">OTP Delivery Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Choose how you want to receive OTP codes when signing documents.
+                            You can receive OTP via <strong>email</strong> (your registered email)
+                            or <strong>SMS</strong> (to your phone number below).
+                        </p>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">Phone Number (for SMS OTP)</label>
+                                <input type="tel" name="{{ form.phone_number.name }}" id="{{ form.phone_number.id_for_label }}" 
+                                       class="form-control {% if form.phone_number.errors %}is-invalid{% endif %}" 
+                                       placeholder="e.g. +255712345678"
+                                       value="{{ user.profile.phone_number|default:'' }}">
+                                {% if form.phone_number.errors %}
+                                    <div class="invalid-feedback">{{ form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Enter your phone number with country code to receive OTP via SMS.
+                                    Leave empty to use email only.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 shadow-sm">
+                                <i class="bi bi-save me-1"></i>Save Phone Number
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
