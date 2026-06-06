@@ -109,6 +109,12 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
+# Beem SMS (Tanzania) settings
+BEEM_API_KEY = config('BEEM_API_KEY', default='')
+BEEM_SECRET_KEY = config('BEEM_SECRET_KEY', default='')
+BEEM_SENDER_NAME = config('BEEM_SENDER_NAME', default='CARLKASA')
+BEEM_API_URL = config('BEEM_API_URL', default='https://apisms.beem.africa/v1/send')
+
 # Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

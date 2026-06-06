@@ -146,13 +146,13 @@ def login_view(request):
             request.session['login_otp_code'] = otp_code
             request.session['login_otp_created_at'] = timezone.now().isoformat()
 
-            # Send OTP via email (or SMS if phone is set)
+            # Send OTP via SMS (if phone is set) or email
             profile = UserProfile.objects.filter(user=user).first()
             if profile and profile.phone_number:
-                try:
-                    send_otp_sms(user, None, otp_code)
+                sms_sent = send_otp_sms(user, None, otp_code)
+                if sms_sent:
                     request.session['login_otp_method'] = 'sms'
-                except Exception:
+                else:
                     send_otp_email(user, None, otp_code)
                     request.session['login_otp_method'] = 'email'
             else:
@@ -215,11 +215,11 @@ def login_otp_view(request):
         _increment_otp_resend(request)
 
         if method == 'sms' and profile and profile.phone_number:
-            try:
-                send_otp_sms(user, None, otp_code)
+            sms_sent = send_otp_sms(user, None, otp_code)
+            if sms_sent:
                 request.session['login_otp_method'] = 'sms'
                 messages.success(request, 'OTP resent via SMS.')
-            except Exception:
+            else:
                 send_otp_email(user, None, otp_code)
                 request.session['login_otp_method'] = 'email'
                 messages.success(request, 'OTP resent via email.')

@@ -467,19 +467,16 @@ def send_otp_email(user, document, otp_code):
 
 def send_otp_sms(user, document, otp_code):
     """
-    Send OTP via SMS.
+    Send OTP via SMS using Beem SMS API (Tanzania).
     
-    For production, integrate with an SMS provider like:
-    - Africa's Talking (https://africastalking.com)
-    - Twilio (https://twilio.com)
-    - Vonage (https://vonage.com)
-    
-    For now, this logs the OTP to the console (like the email backend does in dev).
-    In production, replace the print statement with an actual SMS API call.
+    Returns True on success, False on failure (logs error to console).
     """
     profile = UserProfile.objects.filter(user=user).first()
     if not profile or not profile.phone_number:
-        raise ValueError("No phone number configured for SMS delivery.")
+        print(f"\n{'='*60}")
+        print(f"⚠️  No phone number configured for user {user.username}")
+        print(f"{'='*60}\n")
+        return False
 
     phone = profile.phone_number
     
@@ -494,23 +491,24 @@ def send_otp_sms(user, document, otp_code):
         f"Valid for 10 minutes. Do not share this code."
     )
 
-    # 🔧 DEV: Log to console (like the email console backend)
-    print(f"\n{'='*60}")
-    print(f"SMS OTP to {phone}: {otp_code}")
-    print(f"Message:\n{message}")
-    print(f"{'='*60}\n")
-
-    # TODO: In production, replace with actual SMS API call:
-    # Example with Africa's Talking:
-    # import africastalking
-    # africastalking.initialize(username, api_key)
-    # sms = africastalking.SMS
-    # sms.send(message, [phone])
-    #
-    # Example with Twilio:
-    # from twilio.rest import Client
-    # client = Client(account_sid, auth_token)
-    # client.messages.create(body=message, from_=twilio_phone, to=phone)
+    # Try sending via Beem SMS API
+    try:
+        from .beem_sms import send_sms
+        result = send_sms(phone, message)
+        print(f"\n{'='*60}")
+        print(f"✅ SMS OTP sent via Beem to {phone}: {otp_code}")
+        print(f"Request ID: {result.get('request_id', 'N/A')}")
+        print(f"Status: {result.get('successful', 'N/A')}")
+        print(f"{'='*60}\n")
+        return True
+    except Exception as e:
+        # Log failure to console
+        print(f"\n{'='*60}")
+        print(f"⚠️  Beem SMS failed ({e})")
+        print(f"Would have sent SMS to {phone}: {otp_code}")
+        print(f"Message:\n{message}")
+        print(f"{'='*60}\n")
+        return False
 
 
 @login_required
@@ -537,10 +535,11 @@ def confirm_otp_view(request, doc_id):
     profile = UserProfile.objects.filter(user=request.user).first()
 
     # Determine OTP delivery method
-    # Default to email. If user has a phone number and requests SMS, use SMS.
-    otp_method = request.GET.get("resend", "email")  # 'email' or 'sms'
+    # Default to SMS if user has a phone number, otherwise email.
+    default_method = "sms" if (profile and profile.phone_number) else "email"
+    otp_method = request.GET.get("resend", default_method)  # 'email' or 'sms'
     if otp_method not in ("email", "sms"):
-        otp_method = "email"
+        otp_method = default_method
     if otp_method == "sms" and (not profile or not profile.phone_number):
         otp_method = "email"
 
@@ -571,7 +570,7 @@ def confirm_otp_view(request, doc_id):
                 code=otp_code,
                 is_used=False,
                 expires_at__gt=timezone.now(),
-            ).last()
+            ).order_by('-created_at').first()
 
             if otp_entry or skip_otp:
                 if otp_entry:
@@ -613,14 +612,15 @@ def confirm_otp_view(request, doc_id):
         )
 
         # Send OTP via the chosen method
-        try:
-            if otp_method == "sms" and profile and profile.phone_number:
-                send_otp_sms(request.user, document, otp_code)
-            else:
+        if otp_method == "sms" and profile and profile.phone_number:
+            sms_sent = send_otp_sms(request.user, document, otp_code)
+            if not sms_sent:
+                # Fall back to email if SMS fails
+                print(f"⚠️  SMS failed, falling back to email for {request.user.username}")
                 send_otp_email(request.user, document, otp_code)
-        except Exception as e:
-            # If sending fails, still show the OTP page
-            print(f"OTP sending failed: {e}")
+                otp_method = "email"
+        else:
+            send_otp_email(request.user, document, otp_code)
 
     # Determine display info for the template
     if otp_method == "sms" and profile and profile.phone_number:
