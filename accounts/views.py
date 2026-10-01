@@ -266,11 +266,18 @@ def login_otp_view(request):
     else:
         otp_destination = user.email
 
-    return render(request, 'accounts/login_otp.html', {
+    context = {
         'otp_method': otp_method,
         'otp_destination': otp_destination,
         'has_phone': profile and profile.phone_number,
-    })
+    }
+
+    # DEV ONLY: When DEBUG is on, expose the OTP on the page so the flow can be
+    # tested without a working SMS/email gateway. Never enabled in production.
+    if settings.DEBUG:
+        context['debug_otp'] = request.session.get('login_otp_code')
+
+    return render(request, 'accounts/login_otp.html', context)
 
 
 @never_cache

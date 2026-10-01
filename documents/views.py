@@ -637,6 +637,9 @@ def confirm_otp_view(request, doc_id):
         "skip_otp": skip_otp,
         "otp_method": otp_method,
         "otp_destination": otp_destination,
+        # DEV ONLY: expose the OTP on the page while DEBUG=True so the signing
+        # flow can be tested without a working SMS/email gateway.
+        "debug_otp": otp_code if settings.DEBUG else None,
     })
 
 
