@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4361ee">
+    <title>Offline - SignDocs</title>
+    <!-- Self-contained offline page: no external assets so it always renders. -->
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #7209b7;
+            --gray-50: #f8fafc;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--gray-800);
+            background:
+                radial-gradient(ellipse at 0% 0%, rgba(67, 97, 238, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(114, 9, 183, 0.06) 0%, transparent 50%),
+                var(--gray-50);
+        }
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            font-size: 1.75rem;
+        }
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem;
+        }
+        p {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0 0 1.5rem;
+        }
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 0;
+            cursor: pointer;
+            padding: 0.7rem 1.4rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 4px 6px -1px rgba(67, 97, 238, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 8px 12px -2px rgba(67, 97, 238, 0.45); }
+        button:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+        </div>
+        <h1>You're offline</h1>
+        <p>SignDocs needs an internet connection to load your documents. Reconnect and try again.</p>
+        <button type="button" onclick="window.location.reload()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Try again
+        </button>
+    </div>
+</body>
+</html>

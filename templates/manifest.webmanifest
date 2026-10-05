@@ -1,0 +1,68 @@
+{% load static %}{
+    "name": "SignDocs",
+    "short_name": "SignDocs",
+    "description": "Professional document signing - upload, sign and share documents securely.",
+    "id": "/",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
+    "orientation": "portrait-primary",
+    "background_color": "#f8fafc",
+    "theme_color": "#4361ee",
+    "lang": "en",
+    "dir": "ltr",
+    "categories": ["business", "productivity", "utilities"],
+    "icons": [
+        {
+            "src": "{% static 'icons/icon-192x192.png' %}",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "{% static 'icons/icon-512x512.png' %}",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "{% static 'icons/icon-maskable-192x192.png' %}",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "{% static 'icons/icon-maskable-512x512.png' %}",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Documents",
+            "short_name": "Documents",
+            "url": "/",
+            "icons": [
+                {
+                    "src": "{% static 'icons/icon-192x192.png' %}",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Profile",
+            "short_name": "Profile",
+            "url": "/accounts/profile/",
+            "icons": [
+                {
+                    "src": "{% static 'icons/icon-192x192.png' %}",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
+}

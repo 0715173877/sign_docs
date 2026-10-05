@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils.cache import add_never_cache_headers
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -40,13 +41,20 @@ class PendingOTPMiddleware:
     def __call__(self, request):
         # Check if user has a pending OTP (logged in but not verified)
         if request.session.get('pending_otp'):
+            # Public PWA assets must always be reachable (service worker,
+            # manifest) as must static files, otherwise the app shell breaks.
+            static_prefix = "/" + settings.STATIC_URL.lstrip("/")
+            if request.path.startswith(static_prefix):
+                return self.get_response(request)
+
             # Allow access only to the login OTP page and logout
             allowed_paths = [
                 reverse('login_otp'),
                 reverse('logout'),
+                reverse('login'),
+                reverse('manifest'),
+                reverse('service_worker'),
             ]
-            # Also allow the login page itself (in case they want to go back)
-            allowed_paths.append(reverse('login'))
 
             if request.path not in allowed_paths:
                 return redirect('login_otp')
