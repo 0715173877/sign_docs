@@ -162,6 +162,12 @@ def main():
     make_icon(32, path=OUT_DIR / "favicon-32x32.png")
     make_icon(16, path=OUT_DIR / "favicon-16x16.png")
 
+    # Multi-resolution favicon.ico (legacy browsers / OS shortcuts)
+    ico = diagonal_gradient(48).convert("RGBA")
+    draw_glyph(ico, 48, scale=0.72)
+    ico.putalpha(rounded_mask(48, radius=int(48 * 0.22)))
+    ico.save(OUT_DIR / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+
     print(f"Generated PWA icons in {OUT_DIR}")
 
 

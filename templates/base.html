@@ -20,6 +20,7 @@
     <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
 
     <!-- Favicons -->
+    <link rel="icon" href="{% static 'icons/favicon.ico' %}" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}">
 
@@ -126,26 +127,43 @@
 
     <!-- PWA: register the service worker -->
     <script>
-        if ('serviceWorker' in navigator) {
+        (function () {
+            if (!('serviceWorker' in navigator)) return;
+            var SW_URL = '{% url "service_worker" %}';
+
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('{% url "service_worker" %}', { scope: '/' })
-                    .then(function (registration) {
-                        // When a new worker is waiting, activate it on next navigation.
-                        registration.addEventListener('updatefound', function () {
-                            var newWorker = registration.installing;
-                            if (!newWorker) return;
-                            newWorker.addEventListener('statechange', function () {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    newWorker.postMessage('SKIP_WAITING');
-                                }
-                            });
+                // Clean up service workers left over from earlier PWA builds so a
+                // stale worker can't serve an outdated manifest / missing icons.
+                var cleanup = ('getRegistrations' in navigator.serviceWorker)
+                    ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                        return Promise.all(regs.map(function (reg) {
+                            var worker = reg.active || reg.installing || reg.waiting;
+                            if (worker && worker.scriptURL.indexOf(SW_URL) === -1) {
+                                return reg.unregister();
+                            }
+                            return Promise.resolve(false);
+                        }));
+                    }).catch(function () { /* not supported everywhere */ })
+                    : Promise.resolve();
+
+                cleanup.then(function () {
+                    return navigator.serviceWorker.register(SW_URL, { scope: '/' });
+                }).then(function (registration) {
+                    // When a new worker is waiting, activate it on next navigation.
+                    registration.addEventListener('updatefound', function () {
+                        var newWorker = registration.installing;
+                        if (!newWorker) return;
+                        newWorker.addEventListener('statechange', function () {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                newWorker.postMessage('SKIP_WAITING');
+                            }
                         });
-                    })
-                    .catch(function (error) {
-                        console.warn('Service worker registration failed:', error);
                     });
+                }).catch(function (error) {
+                    console.warn('Service worker registration failed:', error);
+                });
             });
-        }
+        })();
     </script>
 
     {% block extra_js %}{% endblock %}
