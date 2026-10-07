@@ -117,7 +117,31 @@ BEEM_SECRET_KEY = config('BEEM_SECRET_KEY', default='')
 BEEM_SENDER_NAME = config('BEEM_SENDER_NAME', default='CARLKASA')
 BEEM_API_URL = config('BEEM_API_URL', default='https://apisms.beem.africa/v1/send')
 
-# Session settings
-SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# --- Session & security settings ---
+# Auto sign-out after 5 minutes of inactivity. SESSION_SAVE_EVERY_REQUEST
+# refreshes the expiry on every request, so the timer only resets on activity.
+SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=300, cast=int)  # 5 minutes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True   # sign out when the browser is closed
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Session/CSRF cookie hardening
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Transport security. Kept off by default so the app also works over plain HTTP
+# (e.g. http://31.220.75.145:8005). Turn these on via the environment when the
+# site is served over HTTPS.
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+
+# General response hardening
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+# HSTS — only meaningful over HTTPS; enable by setting SECURE_HSTS_SECONDS > 0.
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0

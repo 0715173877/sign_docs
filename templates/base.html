@@ -197,6 +197,41 @@
         })();
     </script>
 
+    <!-- Auto sign-out after 5 minutes of inactivity (mirrors SESSION_COOKIE_AGE) -->
+    {% if user.is_authenticated and not request.session.pending_otp %}
+    <script>
+        (function () {
+            var IDLE_MS = 300000;               // 5 minutes
+            var LOGOUT_URL = "{% url 'logout' %}";
+            var CSRF_TOKEN = "{{ csrf_token }}";
+            var timer;
+
+            function logout() {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = LOGOUT_URL;
+                var csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = CSRF_TOKEN;
+                form.appendChild(csrf);
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            function reset() {
+                clearTimeout(timer);
+                timer = setTimeout(logout, IDLE_MS);
+            }
+
+            ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (evt) {
+                document.addEventListener(evt, reset, { passive: true });
+            });
+            reset();
+        })();
+    </script>
+    {% endif %}
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

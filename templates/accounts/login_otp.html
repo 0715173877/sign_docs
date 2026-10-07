@@ -73,9 +73,12 @@
                         {% endif %}
                     </div>
                     <p class="text-muted small mt-3">
-                        <a href="{% url 'login' %}" class="text-decoration-none">
-                            <i class="bi bi-arrow-left me-1"></i>Back to login
-                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link p-0 text-decoration-none align-baseline text-muted small">
+                                <i class="bi bi-arrow-left me-1"></i>Back to login
+                            </button>
+                        </form>
                     </p>
                 </div>
             </div>

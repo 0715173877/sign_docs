@@ -289,6 +289,7 @@ def login_otp_view(request):
 
 
 @never_cache
+@require_POST
 def logout_view(request):
     logout(request)
     return redirect('login')
