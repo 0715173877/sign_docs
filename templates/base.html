@@ -73,6 +73,37 @@
                 </ul>
                 
                 <div class="d-flex align-items-center gap-2">
+                    {% if request.company %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle d-flex align-items-center gap-1"
+                                type="button" id="companySwitcher" data-bs-toggle="dropdown" aria-expanded="false"
+                                title="Switch company">
+                            <i class="bi bi-building"></i>
+                            <span class="d-none d-md-inline text-truncate" style="max-width: 140px;">{{ request.company.name }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="companySwitcher">
+                            <li><h6 class="dropdown-header"><i class="bi bi-building me-1"></i>Switch Company</h6></li>
+                            {% for comp in user.companies.all %}
+                            <li>
+                                <form method="post" action="{% url 'company_switch' comp.id %}" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 {% if comp.id == request.company.id %}active{% endif %}">
+                                        {% if comp.id == request.company.id %}<i class="bi bi-check-circle-fill text-primary"></i>{% else %}<i class="bi bi-circle text-muted opacity-50"></i>{% endif %}
+                                        <span class="flex-grow-1 text-truncate">{{ comp.name }}</span>
+                                        {% if comp.is_default %}<span class="badge bg-secondary bg-opacity-10 text-secondary-emphasis">default</span>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'profile' %}#companies">
+                                    <i class="bi bi-gear me-2"></i>Manage companies
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
                     <span class="nav-avatar">{{ user.username|first|upper }}</span>
                     <span class="text-muted small d-none d-md-inline">{{ user.username }}</span>
                     <form method="post" action="{% url 'logout' %}" class="m-0">

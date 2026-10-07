@@ -4,12 +4,12 @@ from .models import Document, OTP
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ["title", "user", "is_signed", "retention_days", "days_remaining_display", "created_at"]
+    list_display = ["title", "company", "user", "is_signed", "retention_days", "days_remaining_display", "created_at"]
     list_filter = ["is_signed", "created_at"]
-    search_fields = ["title", "user__username"]
+    search_fields = ["title", "user__username", "company__name"]
     fieldsets = (
         (None, {
-            "fields": ("user", "title", "pdf_file", "total_pages", "is_signed", "signed_pdf")
+            "fields": ("user", "company", "title", "pdf_file", "total_pages", "is_signed", "signed_pdf")
         }),
         ("Retention Settings", {
             "fields": ("retention_days",),

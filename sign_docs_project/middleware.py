@@ -61,3 +61,23 @@ class PendingOTPMiddleware:
 
         response = self.get_response(request)
         return response
+
+
+class ActiveCompanyMiddleware:
+    """
+    Middleware that resolves the user's currently active company and exposes it
+    as ``request.company``.
+
+    The value is read from the session (``active_company_id``) and falls back to
+    the user's default company. Anonymous users get ``request.company = None``.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.company = None
+        if request.user.is_authenticated:
+            # Imported lazily so the app registry is fully loaded first.
+            from accounts.company import get_active_company
+            request.company = get_active_company(request)
+        return self.get_response(request)

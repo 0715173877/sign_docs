@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <!-- Profile Header -->
         <div class="profile-header d-flex align-items-center gap-4 animate-fade-in">
             <div class="profile-avatar">
@@ -25,82 +25,141 @@
             </div>
         {% endif %}
 
-        <div class="row g-4">
-            <!-- Signature & Stamp Upload -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm animate-fade-in-up">
-                    <div class="card-header d-flex align-items-center gap-2">
-                        <i class="bi bi-pencil-square text-primary fs-5"></i>
-                        <h5 class="fw-bold mb-0">Signature</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if user.profile.signature %}
-                            <div class="text-center mb-3 p-3 bg-light rounded-3">
-                                <img src="{{ user.profile.signature.url }}" alt="Current Signature" 
-                                     class="img-fluid" style="max-height: 80px;">
-                            </div>
-                        {% else %}
-                            <div class="text-center mb-3 p-3 bg-light rounded-3">
-                                <i class="bi bi-pencil text-muted" style="font-size: 2rem;"></i>
-                                <p class="text-muted small mb-0 mt-2">No signature uploaded</p>
-                            </div>
-                        {% endif %}
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="{{ form.signature.id_for_label }}" class="form-label">Upload Signature Image</label>
-                                <input type="file" name="{{ form.signature.name }}" id="{{ form.signature.id_for_label }}" 
-                                       class="form-control {% if form.signature.errors %}is-invalid{% endif %}" accept="image/*">
-                                {% if form.signature.errors %}
-                                    <div class="invalid-feedback">{{ form.signature.errors.0 }}</div>
-                                {% endif %}
-                                <div class="form-text">PNG or JPG with transparent background recommended</div>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                <i class="bi bi-upload me-1"></i>Upload Signature
-                            </button>
-                        </form>
-                    </div>
+        <!-- ============================= -->
+        <!-- Companies                     -->
+        <!-- ============================= -->
+        <div id="companies" class="mt-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h3 class="h5 fw-bold mb-1"><i class="bi bi-building me-1 text-primary"></i>My Companies</h3>
+                    <p class="text-muted small mb-0">
+                        Each company has its own signature and stamp, and its own set of documents.
+                        Switch between companies using the selector in the top navigation bar.
+                    </p>
                 </div>
             </div>
 
-            <!-- Stamp Upload -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm animate-fade-in-up" style="animation-delay: 0.1s;">
-                    <div class="card-header d-flex align-items-center gap-2">
-                        <i class="bi bi-stamp text-danger fs-5"></i>
-                        <h5 class="fw-bold mb-0">Stamp</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if user.profile.stamp %}
-                            <div class="text-center mb-3 p-3 bg-light rounded-3">
-                                <img src="{{ user.profile.stamp.url }}" alt="Current Stamp" 
-                                     class="img-fluid" style="max-height: 100px;">
-                            </div>
-                        {% else %}
-                            <div class="text-center mb-3 p-3 bg-light rounded-3">
-                                <i class="bi bi-stamp text-muted" style="font-size: 2rem;"></i>
-                                <p class="text-muted small mb-0 mt-2">No stamp uploaded</p>
-                            </div>
+            {% for comp in companies %}
+            <div class="card border-0 shadow-sm mb-3 animate-fade-in-up {% if active_company and comp.id == active_company.id %}border-start border-4 border-primary{% endif %}">
+                <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-primary fs-5"></i>
+                        <span class="fw-bold">{{ comp.name }}</span>
+                        {% if comp.is_default %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary-emphasis border border-secondary border-opacity-25">Default</span>
                         {% endif %}
-                        <form method="post" enctype="multipart/form-data">
+                        {% if active_company and comp.id == active_company.id %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary-emphasis border border-primary border-opacity-25">
+                                <i class="bi bi-check-circle-fill me-1"></i>Active
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if not active_company or comp.id != active_company.id %}
+                        <form method="post" action="{% url 'company_switch' comp.id %}" class="m-0">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="{{ form.stamp.id_for_label }}" class="form-label">Upload Stamp Image</label>
-                                <input type="file" name="{{ form.stamp.name }}" id="{{ form.stamp.id_for_label }}" 
-                                       class="form-control {% if form.stamp.errors %}is-invalid{% endif %}" accept="image/*">
-                                {% if form.stamp.errors %}
-                                    <div class="invalid-feedback">{{ form.stamp.errors.0 }}</div>
-                                {% endif %}
-                                <div class="form-text">PNG with transparent background recommended</div>
-                            </div>
-                            <button type="submit" class="btn btn-danger w-100 shadow-sm">
-                                <i class="bi bi-upload me-1"></i>Upload Stamp
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-left-right me-1"></i>Switch
                             </button>
                         </form>
+                        {% endif %}
+                        {% if not comp.is_default %}
+                        <form method="post" action="{% url 'company_set_default' comp.id %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Select this company by default after login">
+                                <i class="bi bi-star me-1"></i>Make default
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if companies|length > 1 %}
+                        <form method="post" action="{% url 'company_delete' comp.id %}" class="m-0"
+                              onsubmit="return confirm('Delete company &quot;{{ comp.name }}&quot; and ALL of its documents? This cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete company">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <p class="form-label mb-1"><i class="bi bi-pencil-square text-primary me-1"></i>Signature</p>
+                            {% if comp.signature %}
+                                <div class="text-center p-3 bg-light rounded-3">
+                                    <img src="{{ comp.signature.url }}" alt="Signature" class="img-fluid" style="max-height: 80px;">
+                                </div>
+                            {% else %}
+                                <div class="text-center p-3 bg-light rounded-3 text-muted small">
+                                    <i class="bi bi-pencil fs-4 d-block mb-1"></i>No signature uploaded
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p class="form-label mb-1"><i class="bi bi-stamp text-danger me-1"></i>Stamp</p>
+                            {% if comp.stamp %}
+                                <div class="text-center p-3 bg-light rounded-3">
+                                    <img src="{{ comp.stamp.url }}" alt="Stamp" class="img-fluid" style="max-height: 100px;">
+                                </div>
+                            {% else %}
+                                <div class="text-center p-3 bg-light rounded-3 text-muted small">
+                                    <i class="bi bi-stamp fs-4 d-block mb-1"></i>No stamp uploaded
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'company_update' comp.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small">Upload / replace signature</label>
+                                <input type="file" name="signature" class="form-control form-control-sm" accept="image/png">
+                                <div class="form-text">Transparent PNG recommended.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Upload / replace stamp</label>
+                                <input type="file" name="stamp" class="form-control form-control-sm" accept="image/png">
+                                <div class="form-text">Transparent PNG recommended.</div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm mt-3">
+                            <i class="bi bi-upload me-1"></i>Save signature &amp; stamp
+                        </button>
+                    </form>
+                </div>
             </div>
+            {% endfor %}
+        </div>
+
+        <!-- Create new company -->
+        <div class="card border-0 shadow-sm animate-fade-in-up mb-4">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle text-success fs-5"></i>
+                <h5 class="fw-bold mb-0">Add a Company</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'company_create' %}" class="row g-3 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-md-8">
+                        <label for="{{ company_form.name.id_for_label }}" class="form-label">Company Name</label>
+                        <input type="text" name="name" id="{{ company_form.name.id_for_label }}"
+                               class="form-control" placeholder="e.g. Acme Holdings Ltd" required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success w-100 shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i>Create Company
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- Account settings              -->
+        <!-- ============================= -->
+        <div class="row g-4">
 
             <!-- Phone Number Settings -->
             <div class="col-12">

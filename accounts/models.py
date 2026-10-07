@@ -75,3 +75,45 @@ class UserProfile(models.Model):
         if len(num) == 12 and num.startswith('255'):
             return f"+{num[:3]} {num[3:6]} {num[6:9]} {num[9:]}"
         return f"+{num}"
+
+
+class Company(models.Model):
+    """A company owned by a user.
+
+    Each company has its own signature and stamp (used when signing documents)
+    and its own set of documents. A user can own multiple companies and switch
+    between them; the active company is tracked in the session.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='companies')
+    name = models.CharField(max_length=255)
+    signature = models.ImageField(
+        upload_to='signatures/',
+        validators=[FileExtensionValidator(['png'])],
+        blank=True, null=True,
+        help_text="Upload the company signature as a transparent PNG"
+    )
+    stamp = models.ImageField(
+        upload_to='stamps/',
+        validators=[FileExtensionValidator(['png'])],
+        blank=True, null=True,
+        help_text="Upload the company stamp/logo as a transparent PNG"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="The company that is selected automatically after login"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'Companies'
+
+    def __str__(self):
+        return f"{self.name} ({self.user.username})"
+
+    def has_signature(self):
+        return bool(self.signature)
+
+    def has_stamp(self):
+        return bool(self.stamp)

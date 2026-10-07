@@ -39,6 +39,8 @@ MIDDLEWARE = [
     'sign_docs_project.middleware.NoCacheMiddleware',
     # Block pending-OTP users from accessing protected pages
     'sign_docs_project.middleware.PendingOTPMiddleware',
+    # Resolve the active company and expose it as request.company
+    'sign_docs_project.middleware.ActiveCompanyMiddleware',
 ]
 
 ROOT_URLCONF = 'sign_docs_project.urls'

@@ -125,15 +125,15 @@ def generate_signed_pdf(document):
     preview pixels and PDF points.
     """
     pdf_path = document.pdf_file.path
-    profile = UserProfile.objects.filter(user=document.user).first()
-    if not profile:
-        raise ValueError("User profile not found. Please upload a signature and stamp first.")
+    company = document.company
+    if not company:
+        raise ValueError("No company is associated with this document. Please select a company and try again.")
 
     # Validate that image files exist on disk
-    if profile.signature and not os.path.exists(profile.signature.path):
-        raise FileNotFoundError(f"Signature file not found: {profile.signature.path}")
-    if profile.stamp and not os.path.exists(profile.stamp.path):
-        raise FileNotFoundError(f"Stamp file not found: {profile.stamp.path}")
+    if company.signature and not os.path.exists(company.signature.path):
+        raise FileNotFoundError(f"Signature file not found: {company.signature.path}")
+    if company.stamp and not os.path.exists(company.stamp.path):
+        raise FileNotFoundError(f"Stamp file not found: {company.stamp.path}")
 
     # Open the PDF
     doc = fitz.open(pdf_path)
@@ -180,8 +180,8 @@ def generate_signed_pdf(document):
                 cx = placement.x  # center x in pixels
                 cy = placement.y  # center y in pixels
 
-                if placement.placement_type == 'signature' and profile.signature:
-                    sig_path = profile.signature.path
+                if placement.placement_type == 'signature' and company.signature:
+                    sig_path = company.signature.path
                     sig_img = Image.open(sig_path).convert("RGBA")
 
                     # Calculate signature size relative to page width
@@ -196,7 +196,7 @@ def generate_signed_pdf(document):
                     # Paste onto rendered image (use alpha channel for transparency)
                     rendered_img.paste(sig_img_resized, (paste_x, paste_y), sig_img_resized)
 
-                elif placement.placement_type == 'stamp' and profile.stamp:
+                elif placement.placement_type == 'stamp' and company.stamp:
                     # Create temp file for dated stamp
                     dated_stamp_path = os.path.join(
                         settings.MEDIA_ROOT,
@@ -204,7 +204,7 @@ def generate_signed_pdf(document):
                         f"dated_stamp_{document.id}_p{page_num}.png",
                     )
                     os.makedirs(os.path.dirname(dated_stamp_path), exist_ok=True)
-                    add_date_to_stamp(profile.stamp.path, dated_stamp_path)
+                    add_date_to_stamp(company.stamp.path, dated_stamp_path)
                     temp_files.append(dated_stamp_path)
 
                     stamp_img = Image.open(dated_stamp_path).convert("RGBA")
@@ -276,8 +276,13 @@ def generate_otp():
 
 @login_required
 def dashboard_view(request):
-    """Show user's documents and upload form."""
-    documents = Document.objects.filter(user=request.user).order_by("-created_at")
+    """Show the active company's documents and upload form."""
+    company = request.company
+    if company is None:
+        messages.error(request, "Please create a company before uploading documents.")
+        return redirect("profile")
+
+    documents = Document.objects.filter(user=request.user, company=company).order_by("-created_at")
     form = DocumentUploadForm()
 
     if request.method == "POST":
@@ -285,6 +290,7 @@ def dashboard_view(request):
         if form.is_valid():
             document = form.save(commit=False)
             document.user = request.user
+            document.company = company
             document.save()
 
             # Generate previews for all pages
@@ -299,6 +305,7 @@ def dashboard_view(request):
     return render(request, "documents/dashboard.html", {
         "documents": documents,
         "form": form,
+        "company": company,
         "documents_signed_count": documents_signed_count,
         "documents_pending_count": documents_pending_count,
     })
@@ -309,12 +316,13 @@ def dashboard_view(request):
 def sign_document_view(request, doc_id):
     """Show the first page of the document for signing."""
     document = get_object_or_404(Document, id=doc_id, user=request.user)
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    company = document.company or request.company
 
-    if not profile.has_signature() or not profile.has_stamp():
+    if not company or not company.has_signature() or not company.has_stamp():
         messages.warning(
             request,
-            "You need to upload both a signature and a stamp before signing documents."
+            f"Please upload both a signature and a stamp for "
+            f"\"{company.name if company else 'your company'}\" before signing documents."
         )
         return redirect("profile")
 
@@ -325,9 +333,9 @@ def sign_document_view(request, doc_id):
 def sign_page_view(request, doc_id, page_num):
     """Show a specific page for signing with HTMX."""
     document = get_object_or_404(Document, id=doc_id, user=request.user)
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    company = document.company or request.company
 
-    if not profile.has_signature() or not profile.has_stamp():
+    if not company or not company.has_signature() or not company.has_stamp():
         messages.warning(
             request,
             "You need to upload both a signature and a stamp before signing documents."
@@ -354,7 +362,7 @@ def sign_page_view(request, doc_id, page_num):
 
     context = {
         "document": document,
-        "profile": profile,
+        "company": company,
         "page_num": page_num,
         "total_pages": document.total_pages,
         "preview_url": preview_url,
@@ -375,7 +383,7 @@ def sign_page_view(request, doc_id, page_num):
 def place_item_view(request, doc_id):
     """HTMX endpoint to place a signature or stamp on a page."""
     document = get_object_or_404(Document, id=doc_id, user=request.user)
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    company = document.company or request.company
 
     try:
         data = json.loads(request.body)
@@ -405,10 +413,10 @@ def place_item_view(request, doc_id):
     )
 
     # Get the image URL for the overlay
-    if placement_type == 'signature' and profile.signature:
-        img_url = profile.signature.url
-    elif placement_type == 'stamp' and profile.stamp:
-        img_url = profile.stamp.url
+    if placement_type == 'signature' and company and company.signature:
+        img_url = company.signature.url
+    elif placement_type == 'stamp' and company and company.stamp:
+        img_url = company.stamp.url
     else:
         img_url = ""
 

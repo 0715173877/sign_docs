@@ -8,6 +8,12 @@ urlpatterns = [
     path("login/otp/", views.login_otp_view, name="login_otp"),
     path("logout/", views.logout_view, name="logout"),
     path("profile/", views.profile_view, name="profile"),
+    # Multi-company management
+    path("company/create/", views.company_create_view, name="company_create"),
+    path("company/<int:company_id>/switch/", views.company_switch_view, name="company_switch"),
+    path("company/<int:company_id>/update/", views.company_update_view, name="company_update"),
+    path("company/<int:company_id>/default/", views.company_set_default_view, name="company_set_default"),
+    path("company/<int:company_id>/delete/", views.company_delete_view, name="company_delete"),
     # Password reset
     path(
         "password-reset/",

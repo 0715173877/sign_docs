@@ -9,6 +9,13 @@ from django.utils import timezone
 
 class Document(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents')
+    company = models.ForeignKey(
+        'accounts.Company',
+        on_delete=models.CASCADE,
+        related_name='documents',
+        null=True, blank=True,
+        help_text="The company this document belongs to (uses that company's signature/stamp)"
+    )
     title = models.CharField(max_length=255, blank=True, db_index=True)
     pdf_file = models.FileField(
         upload_to='documents/',

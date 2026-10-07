@@ -67,9 +67,9 @@
                      style="left: {{ placement.x }}px; top: {{ placement.y }}px; pointer-events: auto; z-index: 10;">
                     <div class="position-relative">
                         {% if placement.placement_type == 'signature' %}
-                            <img src="{{ profile.signature.url }}" alt="Signature" class="overlay-img rounded shadow-sm border" style="max-width: 150px; max-height: 60px; opacity: 0.85;">
+                            <img src="{{ company.signature.url }}" alt="Signature" class="overlay-img rounded shadow-sm border" style="max-width: 150px; max-height: 60px; opacity: 0.85;">
                         {% else %}
-                            <img src="{{ profile.stamp.url }}" alt="Stamp" class="overlay-img rounded shadow-sm border" style="max-width: 120px; max-height: 120px; opacity: 0.85;">
+                            <img src="{{ company.stamp.url }}" alt="Stamp" class="overlay-img rounded shadow-sm border" style="max-width: 120px; max-height: 120px; opacity: 0.85;">
                         {% endif %}
                         <button class="remove-placement position-absolute btn btn-danger btn-sm p-0 d-flex align-items-center justify-content-center" 
                                 style="width: 20px; height: 20px; top: -8px; right: -8px; border-radius: 50%; font-size: 0.6rem;"

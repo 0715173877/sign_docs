@@ -1,18 +1,20 @@
 import random
 import string
 from datetime import timedelta
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
-from .forms import RegisterForm, ProfileForm
-from .models import UserProfile
+from .forms import RegisterForm, ProfileForm, CompanyForm, CompanySignatureForm
+from .models import UserProfile, Company
+from .company import get_active_company, set_active_company, ensure_default_company
 from documents.models import OTP
 from documents.views import send_otp_email, send_otp_sms
 
@@ -103,6 +105,8 @@ def register_view(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Every user needs at least one company to sign documents.
+            ensure_default_company(user)
             login(request, user)
             messages.success(request, 'Account created successfully!')
             return redirect('profile')
@@ -249,6 +253,10 @@ def login_otp_view(request):
             # OTP is valid - fully log the user in
             login(request, user)
 
+            # Select the user's default company for this session
+            default_company = ensure_default_company(user)
+            set_active_company(request, default_company)
+
             # Clean up OTP session data
             for key in ['pending_otp', 'pending_otp_user_id', 'login_otp_code', 'login_otp_created_at', 'login_otp_method']:
                 request.session.pop(key, None)
@@ -289,6 +297,8 @@ def logout_view(request):
 @login_required
 def profile_view(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
+    # Make sure the user always has at least one company.
+    ensure_default_company(request.user)
 
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES, instance=profile)
@@ -299,7 +309,106 @@ def profile_view(request):
     else:
         form = ProfileForm(instance=profile)
 
+    companies = Company.objects.filter(user=request.user)
+    active_company = get_active_company(request)
+
     return render(request, 'accounts/profile.html', {
         'form': form,
         'profile': profile,
+        'companies': companies,
+        'active_company': active_company,
+        'company_form': CompanyForm(),
+        'company_signature_form': CompanySignatureForm(),
     })
+
+
+@login_required
+@require_POST
+def company_create_view(request):
+    """Create a new company for the logged-in user."""
+    form = CompanyForm(request.POST)
+    if form.is_valid():
+        company = form.save(commit=False)
+        company.user = request.user
+        # The very first company becomes the default.
+        if not Company.objects.filter(user=request.user).exists():
+            company.is_default = True
+        company.save()
+        messages.success(
+            request,
+            f'Company "{company.name}" created. Upload its signature and stamp below.'
+        )
+    else:
+        error = form.errors.get('name')
+        messages.error(
+            request,
+            error[0] if error else 'Please enter a valid company name.'
+        )
+    return redirect('profile')
+
+
+@login_required
+@require_POST
+def company_switch_view(request, company_id):
+    """Switch the active company for the current session."""
+    company = get_object_or_404(Company, id=company_id, user=request.user)
+    set_active_company(request, company)
+    messages.success(request, f'Switched to "{company.name}".')
+    return redirect('dashboard')
+
+
+@login_required
+@require_POST
+def company_update_view(request, company_id):
+    """Update a company's signature and/or stamp."""
+    company = get_object_or_404(Company, id=company_id, user=request.user)
+    form = CompanySignatureForm(request.POST, request.FILES, instance=company)
+    if form.is_valid():
+        form.save()
+        messages.success(request, f'Signature & stamp updated for "{company.name}".')
+    else:
+        messages.error(
+            request,
+            'Could not save the image. Please upload a valid PNG file.'
+        )
+    return redirect('profile')
+
+
+@login_required
+@require_POST
+def company_set_default_view(request, company_id):
+    """Mark a company as the default one selected after login."""
+    company = get_object_or_404(Company, id=company_id, user=request.user)
+    Company.objects.filter(user=request.user).update(is_default=False)
+    company.is_default = True
+    company.save(update_fields=['is_default'])
+    messages.success(request, f'"{company.name}" is now your default company.')
+    return redirect('profile')
+
+
+@login_required
+@require_POST
+def company_delete_view(request, company_id):
+    """Delete a company (a user must always keep at least one)."""
+    company = get_object_or_404(Company, id=company_id, user=request.user)
+
+    if Company.objects.filter(user=request.user).count() <= 1:
+        messages.error(request, 'You must keep at least one company.')
+        return redirect('profile')
+
+    was_active = request.session.get('active_company_id') == company.id
+    was_default = company.is_default
+    name = company.name
+    company.delete()
+
+    if was_active:
+        request.session.pop('active_company_id', None)
+
+    if was_default:
+        new_default = Company.objects.filter(user=request.user).first()
+        if new_default:
+            new_default.is_default = True
+            new_default.save(update_fields=['is_default'])
+
+    messages.success(request, f'Company "{name}" deleted.')
+    return redirect('profile')

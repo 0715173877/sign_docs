@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import UserProfile, normalize_phone
+from .models import UserProfile, Company, normalize_phone
 
 
 class RegisterForm(UserCreationForm):
@@ -61,12 +61,11 @@ class RegisterForm(UserCreationForm):
 
 
 class ProfileForm(forms.ModelForm):
+    """Account-level settings. Signature/stamp now live on each Company."""
     class Meta:
         model = UserProfile
-        fields = ['signature', 'stamp', 'phone_number']
+        fields = ['phone_number']
         widgets = {
-            'signature': forms.FileInput(attrs={'accept': 'image/png'}),
-            'stamp': forms.FileInput(attrs={'accept': 'image/png'}),
             'phone_number': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'e.g. +255712345678',
@@ -87,3 +86,34 @@ class ProfileForm(forms.ModelForm):
                 # Store normalized version for saving
                 self.cleaned_data['phone_number'] = normalized
         return phone
+
+
+class CompanyForm(forms.ModelForm):
+    """Create or rename a company."""
+    class Meta:
+        model = Company
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Acme Holdings Ltd',
+            }),
+        }
+        labels = {'name': 'Company Name'}
+
+    def clean_name(self):
+        name = (self.cleaned_data.get('name') or '').strip()
+        if not name:
+            raise forms.ValidationError("Please enter a company name.")
+        return name
+
+
+class CompanySignatureForm(forms.ModelForm):
+    """Upload the signature and/or stamp for a company."""
+    class Meta:
+        model = Company
+        fields = ['signature', 'stamp']
+        widgets = {
+            'signature': forms.FileInput(attrs={'accept': 'image/png'}),
+            'stamp': forms.FileInput(attrs={'accept': 'image/png'}),
+        }
